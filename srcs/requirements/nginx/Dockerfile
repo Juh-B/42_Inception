@@ -1,11 +1,11 @@
 FROM debian:bookworm
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         nginx \
         openssl \
-        gettext-base \
-    && rm -rf /var/lib/apt/lists/*
+        gettext-base && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /etc/nginx/ssl
 

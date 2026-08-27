@@ -95,3 +95,92 @@ secrets:
 
   wordpress_user_password:
     file: ../secrets/wordpress_user_password.txt
+
+# -------------------------
+# services:
+
+#   mariadb:
+#     image: mariadb
+#     build:
+#       context: ./requirements/mariadb
+#       dockerfile: Dockerfile
+#     container_name: mariadb
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     secrets:
+#       - db_password
+#       - db_root_password
+#     volumes:
+#       - mariadb_data:/var/lib/mysql
+#     networks:
+#       - inception
+
+#   wordpress:
+#     image: wordpress
+#     build:
+#       context: ./requirements/wordpress
+#       dockerfile: Dockerfile
+#     container_name: wordpress
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     secrets:
+#       - db_password
+#       - credentials
+#     volumes:
+#       - wordpress_data:/var/www/html
+#     networks:
+#       - inception
+#     depends_on:
+#       - mariadb
+
+#   nginx:
+#     image: nginx
+#     build:
+#       context: ./requirements/nginx
+#       dockerfile: Dockerfile
+#     container_name: nginx
+#     restart: unless-stopped
+#     env_file:
+#       - .env
+#     ports:
+#       - "${NGINX_EXTERNAL_PORT}:${NGINX_INTERNAL_PORT}"
+#     volumes:
+#       - wordpress_data:/var/www/html:ro
+#     networks:
+#       - inception
+#     depends_on:
+#       - wordpress
+
+# volumes:
+
+#   mariadb_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: /home/${USER}/data/mariadb
+
+#   wordpress_data:
+#     driver: local
+#     driver_opts:
+#       type: none
+#       o: bind
+#       device: /home/${USER}/data/wordpress
+
+# networks:
+
+#   inception:
+#     driver: bridge
+
+# secrets:
+
+#   db_password:
+#     file: ../secrets/db_password.txt
+
+#   db_root_password:
+#     file: ../secrets/db_root_password.txt
+
+#   credentials:
+#     file: ../secrets/credentials.txt

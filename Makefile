@@ -1,53 +1,60 @@
 NAME = inception
 
-COMPOSE = docker compose
 COMPOSE_FILE = srcs/docker-compose.yml
 DATA_DIR = /home/$(USER)/data
 
 GREEN = \033[1;32m
 YELLOW = \033[33m
-RED = \033[1;31m
 RESET = \033[0m
 
 # ===================== RULES =====================
 
 all: up
 
-up: create_dirs
-	@echo "$(YELLOW)Building and starting Inception...$(RESET)"
-	@$(COMPOSE) -f $(COMPOSE_FILE) up -d --build
+up: setup
+	@echo "$(YELLOW)Building Inception...$(RESET)"
+	@docker compose -f $(COMPOSE_FILE) up --build -d
 	@echo "$(GREEN)Inception is Ready!$(RESET)"
 
-create_dirs:
+setup:
+	@./srcs/requirements/tools/setup.sh
 	@mkdir -p $(DATA_DIR)/mariadb
 	@mkdir -p $(DATA_DIR)/wordpress
 
 down:
-	@echo "$(YELLOW)Stopping Inception...$(RESET)"
-	@$(COMPOSE) -f $(COMPOSE_FILE) down
-	@echo "$(GREEN)Inception stopped!$(RESET)"
-
-# ===================== STATUS =====================
-
-status:
-	@$(COMPOSE) -f $(COMPOSE_FILE) ps
-
-logs:
-	@$(COMPOSE) -f $(COMPOSE_FILE) logs -f
+	@docker compose -f $(COMPOSE_FILE) down
+	@echo "$(GREEN)Containers stopped!$(RESET)"
 
 # ===================== CLEAN =====================
 
 clean: down
-	@echo "$(YELLOW)Removing volumes...$(RESET)"
-	@$(COMPOSE) -f $(COMPOSE_FILE) down -v
+	@docker compose -f $(COMPOSE_FILE) down -v --rmi local
 	@sudo rm -rf $(DATA_DIR)
 	@echo "$(GREEN)Clean done!$(RESET)"
 
 fclean: clean
-	@echo "$(YELLOW)Removing Docker images and unused resources...$(RESET)"
 	@docker system prune -af
 	@echo "$(GREEN)Full clean done!$(RESET)"
 
 re: fclean all
 
-.PHONY: all up create_dirs down status logs clean fclean re
+# ===================== DEBUG =====================
+
+logs:
+	@docker compose -f $(COMPOSE_FILE) logs -f
+
+status:
+	@docker compose -f $(COMPOSE_FILE) ps
+
+help:
+	@echo "$(YELLOW)Available commands:$(RESET)"
+	@echo "  make        Build and start the project"
+	@echo "  make up     Build and start the project"
+	@echo "  make down   Stop containers"
+	@echo "  make clean  Remove containers, images and data"
+	@echo "  make fclean Clean Docker resources"
+	@echo "  make re     Full rebuild"
+	@echo "  make logs   Show logs"
+	@echo "  make status Show status"
+
+.PHONY: all up setup down clean fclean re logs status help

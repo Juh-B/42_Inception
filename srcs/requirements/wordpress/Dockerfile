@@ -1,7 +1,7 @@
 FROM debian:bookworm
 
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         php8.2-fpm \
         php8.2-mysql \
         php8.2-curl \
@@ -10,18 +10,26 @@ RUN apt-get update && \
         php8.2-xml \
         php8.2-zip \
         curl \
-        mariadb-client \
-    && rm -rf /var/lib/apt/lists/*
+        mariadb-client && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN curl -L \
+# ===================== WP-CLI =====================
+
+RUN curl -fsSL \
         https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-        -o /usr/local/bin/wp \
-    && chmod +x /usr/local/bin/wp
+        -o /usr/local/bin/wp && \
+    chmod +x /usr/local/bin/wp
 
-RUN mkdir -p /var/www/html \
-    && chown -R www-data:www-data /var/www/html
+# ===================== WORDPRESS DIRECTORY =====================
+
+RUN mkdir -p /var/www/html && \
+    chown -R www-data:www-data /var/www/html
+
+# ===================== PHP-FPM CONFIGURATION =====================
 
 COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+
+# ===================== STARTUP SCRIPT =====================
 
 COPY tools/init_wp.sh /usr/local/bin/init_wp.sh
 

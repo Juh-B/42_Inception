@@ -13,6 +13,7 @@ RUN apt-get update && \
         mariadb-client && \
     rm -rf /var/lib/apt/lists/*
 
+
 # ===================== WP-CLI =====================
 
 RUN curl -fsSL \
@@ -20,14 +21,17 @@ RUN curl -fsSL \
         -o /usr/local/bin/wp && \
     chmod +x /usr/local/bin/wp
 
+
 # ===================== WORDPRESS DIRECTORY =====================
 
 RUN mkdir -p /var/www/html && \
     chown -R www-data:www-data /var/www/html
 
+
 # ===================== PHP-FPM CONFIGURATION =====================
 
 COPY conf/www.conf /etc/php/8.2/fpm/pool.d/www.conf
+
 
 # ===================== STARTUP SCRIPT =====================
 

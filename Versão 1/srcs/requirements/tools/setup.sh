@@ -12,6 +12,7 @@ RESET='\033[0m'
 
 echo -e "${YELLOW}Starting Inception setup...${RESET}"
 
+
 # ===================== HOSTS =====================
 
 if ! grep -qE "^[[:space:]]*127\.0\.0\.1[[:space:]]+${DOMAIN_NAME}([[:space:]]|$)" /etc/hosts; then
@@ -20,6 +21,7 @@ if ! grep -qE "^[[:space:]]*127\.0\.0\.1[[:space:]]+${DOMAIN_NAME}([[:space:]]|$
 else
     echo "${DOMAIN_NAME} already exists in /etc/hosts."
 fi
+
 
 # ===================== SECRETS =====================
 
@@ -50,9 +52,23 @@ create_secret()
     fi
 }
 
-create_secret "db_password.txt" "MariaDB application user password"
-create_secret "db_root_password.txt" "MariaDB root password"
-create_secret "credentials.txt" "WordPress administrator password"
+
+create_secret \
+    "db_password.txt" \
+    "MariaDB application user password"
+
+create_secret \
+    "db_root_password.txt" \
+    "MariaDB root password"
+
+create_secret \
+    "wordpress_admin_password.txt" \
+    "WordPress administrator password"
+
+create_secret \
+    "wordpress_user_password.txt" \
+    "WordPress secondary user password"
+
 
 # ===================== DATA DIRECTORIES =====================
 
@@ -61,5 +77,3 @@ mkdir -p "/home/${USER}/data/wordpress"
 
 echo
 echo -e "${GREEN}Setup complete!${RESET}"
-
-# chmod +x srcs/requirements/tools/setup.sh

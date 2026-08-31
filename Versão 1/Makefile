@@ -25,6 +25,7 @@ down:
 	@docker compose -f $(COMPOSE_FILE) down
 	@echo "$(GREEN)Containers stopped!$(RESET)"
 
+
 # ===================== CLEAN =====================
 
 clean: down
@@ -38,6 +39,7 @@ fclean: clean
 
 re: fclean all
 
+
 # ===================== DEBUG =====================
 
 logs:
@@ -46,15 +48,28 @@ logs:
 status:
 	@docker compose -f $(COMPOSE_FILE) ps
 
+config:
+	@docker compose -f $(COMPOSE_FILE) config
+
+images:
+	@docker compose -f $(COMPOSE_FILE) config --images
+
+network:
+	@docker network ls
+
 help:
 	@echo "$(YELLOW)Available commands:$(RESET)"
-	@echo "  make        Build and start the project"
-	@echo "  make up     Build and start the project"
-	@echo "  make down   Stop containers"
-	@echo "  make clean  Remove containers, images and data"
-	@echo "  make fclean Clean Docker resources"
-	@echo "  make re     Full rebuild"
-	@echo "  make logs   Show logs"
-	@echo "  make status Show status"
+	@echo "  make         Build and start the project"
+	@echo "  make up      Build and start the project"
+	@echo "  make down    Stop containers"
+	@echo "  make clean   Remove containers, images and data"
+	@echo "  make fclean  Clean Docker resources"
+	@echo "  make re      Full rebuild"
+	@echo "  make logs    Show logs"
+	@echo "  make status  Show container status"
+	@echo "  make config  Validate Compose configuration"
+	@echo "  make images  Show image names"
+	@echo "  make network Show Docker networks"
 
-.PHONY: all up setup down clean fclean re logs status help
+
+.PHONY: all up setup down clean fclean re logs status config images network help

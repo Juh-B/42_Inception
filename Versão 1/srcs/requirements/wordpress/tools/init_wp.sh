@@ -5,7 +5,9 @@ set -e
 WP_DIR="/var/www/html"
 
 DB_PASSWORD="$(cat /run/secrets/db_password)"
-WP_PASSWORD="$(cat /run/secrets/credentials)"
+WP_ADMIN_PASSWORD="$(cat /run/secrets/wordpress_admin_password)"
+WP_USER_PASSWORD="$(cat /run/secrets/wordpress_user_password)"
+
 
 # ===================== WAIT FOR DATABASE =====================
 
@@ -34,6 +36,7 @@ done
 
 echo "MariaDB is ready."
 
+
 # ===================== WORDPRESS INSTALLATION =====================
 
 cd "${WP_DIR}"
@@ -45,6 +48,7 @@ if [ ! -f "${WP_DIR}/wp-config.php" ]; then
     wp core download \
         --allow-root
 
+
     echo "Creating wp-config.php..."
 
     wp config create \
@@ -54,25 +58,28 @@ if [ ! -f "${WP_DIR}/wp-config.php" ]; then
         --dbhost="mariadb:${MARIADB_INTERNAL_PORT:-3306}" \
         --allow-root
 
+
     echo "Installing WordPress..."
 
     wp core install \
         --url="https://${DOMAIN_NAME}" \
         --title="${WP_TITLE}" \
         --admin_user="${WP_ADMIN_USER}" \
-        --admin_password="${WP_PASSWORD}" \
+        --admin_password="${WP_ADMIN_PASSWORD}" \
         --admin_email="${WP_ADMIN_EMAIL}" \
         --skip-email \
         --allow-root
 
-    echo "Creating second WordPress user..."
+
+    echo "Creating secondary WordPress user..."
 
     wp user create \
         "${WP_USER}" \
         "${WP_USER_EMAIL}" \
         --role=editor \
-        --user_pass="${WP_PASSWORD}" \
+        --user_pass="${WP_USER_PASSWORD}" \
         --allow-root
+
 
     chown -R www-data:www-data "${WP_DIR}"
 
@@ -84,8 +91,11 @@ else
 
 fi
 
+
 unset DB_PASSWORD
-unset WP_PASSWORD
+unset WP_ADMIN_PASSWORD
+unset WP_USER_PASSWORD
+
 
 # ===================== PHP-FPM =====================
 
@@ -94,78 +104,3 @@ mkdir -p /run/php
 echo "Starting PHP-FPM..."
 
 exec php-fpm8.2 -F
-
-
-
-# #!/bin/bash
-
-# set -e
-
-# DB_PASSWORD=$(cat /run/secrets/db_password)
-# WP_ADMIN_PASSWORD=$(cat /run/secrets/wordpress_admin_password)
-# WP_USER_PASSWORD=$(cat /run/secrets/wordpress_user_password)
-
-# echo "Waiting for MariaDB..."
-
-# until mysqladmin \
-#     -h mariadb \
-#     -u "${MYSQL_USER}" \
-#     -p"${DB_PASSWORD}" \
-#     ping \
-#     --silent
-# do
-#     sleep 2
-# done
-
-# echo "MariaDB is ready."
-
-# cd /var/www/html
-
-# if [ ! -f wp-config.php ]; then
-
-#     echo "Downloading WordPress..."
-
-#     wp core download \
-#         --allow-root
-
-#     echo "Creating WordPress configuration..."
-
-#     wp config create \
-#         --dbname="${MYSQL_DATABASE}" \
-#         --dbuser="${MYSQL_USER}" \
-#         --dbpass="${DB_PASSWORD}" \
-#         --dbhost="mariadb" \
-#         --allow-root
-
-#     echo "Installing WordPress..."
-
-#     wp core install \
-#         --url="${DOMAIN_NAME}" \
-#         --title="${WP_TITLE}" \
-#         --admin_user="${WP_ADMIN_USER}" \
-#         --admin_password="${WP_ADMIN_PASSWORD}" \
-#         --admin_email="${WP_ADMIN_EMAIL}" \
-#         --allow-root
-
-#     echo "Creating secondary user..."
-
-#     wp user create \
-#         "${WP_USER}" \
-#         "${WP_USER_EMAIL}" \
-#         --role=editor \
-#         --user_pass="${WP_USER_PASSWORD}" \
-#         --allow-root
-
-#     echo "WordPress installation complete."
-
-# else
-
-#     echo "WordPress already installed."
-
-# fi
-
-# mkdir -p /run/php
-
-# echo "Starting PHP-FPM..."
-
-# exec php-fpm8.2 -F

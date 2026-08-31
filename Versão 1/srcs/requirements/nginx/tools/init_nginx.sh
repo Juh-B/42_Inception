@@ -4,6 +4,7 @@ set -e
 
 SSL_DIR="/etc/nginx/ssl"
 
+
 # ===================== SSL CERTIFICATE =====================
 
 if [ ! -f "${SSL_DIR}/nginx.crt" ] || [ ! -f "${SSL_DIR}/nginx.key" ]; then
@@ -21,6 +22,7 @@ if [ ! -f "${SSL_DIR}/nginx.crt" ] || [ ! -f "${SSL_DIR}/nginx.key" ]; then
 
 fi
 
+
 # ===================== NGINX CONFIGURATION =====================
 
 echo "Configuring NGINX..."
@@ -31,6 +33,7 @@ envsubst \
     > /tmp/nginx.conf
 
 mv /tmp/nginx.conf /etc/nginx/nginx.conf
+
 
 # ===================== VALIDATION =====================
 

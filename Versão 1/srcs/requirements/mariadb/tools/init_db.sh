@@ -7,6 +7,7 @@ DATA_DIR="/var/lib/mysql"
 mkdir -p /run/mysqld
 chown -R mysql:mysql /run/mysqld "${DATA_DIR}"
 
+
 # ===================== INITIALIZATION =====================
 
 if [ ! -d "${DATA_DIR}/mysql" ]; then
@@ -18,10 +19,12 @@ if [ ! -d "${DATA_DIR}/mysql" ]; then
         --skip-test-db > /dev/null
 fi
 
+
 # ===================== READ SECRETS =====================
 
 DB_PASSWORD="$(cat /run/secrets/db_password)"
 DB_ROOT_PASSWORD="$(cat /run/secrets/db_root_password)"
+
 
 # ===================== INITIAL DATABASE SETUP =====================
 
@@ -52,11 +55,15 @@ EOF
     echo "MariaDB initialization complete."
 
 else
+
     echo "MariaDB already initialized."
+
 fi
+
 
 unset DB_PASSWORD
 unset DB_ROOT_PASSWORD
+
 
 # ===================== START SERVER =====================
 

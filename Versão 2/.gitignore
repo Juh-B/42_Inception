@@ -1,0 +1,15 @@
+*.txt
+
+data/
+
+.env
+
+.DS_Store
+.vscode/
+
+inception_subject.md
+inception_evaluation.md
+implementation_plan.md
+
+.agents
+.codex

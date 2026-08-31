@@ -1,0 +1,73 @@
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  credentials:
+    file: ../secrets/credentials.txt
+
+networks:
+  inception_net:
+    driver: bridge
+
+volumes:
+  wordpress_db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ekeller-/data/mariadb
+  wordpress_files:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/ekeller-/data/wordpress
+
+services:
+
+  # ─── Mandatory ──────────────────────────────────────────────────────────────
+
+  nginx:
+    build: ./requirements/nginx
+    container_name: nginx
+    image: nginx
+    depends_on:
+      - wordpress
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress_files:/var/www/html
+    networks:
+      - inception_net
+    restart: unless-stopped
+
+  wordpress:
+    build: ./requirements/wordpress
+    container_name: wordpress
+    image: wordpress
+    depends_on:
+      - mariadb
+    env_file: .env
+    secrets:
+      - db_password
+      - credentials
+    volumes:
+      - wordpress_files:/var/www/html
+    networks:
+      - inception_net
+    restart: unless-stopped
+
+  mariadb:
+    build: ./requirements/mariadb
+    container_name: mariadb
+    image: mariadb
+    env_file: .env
+    secrets:
+      - db_password
+      - db_root_password
+    volumes:
+      - wordpress_db:/var/lib/mysql
+    networks:
+      - inception_net
+    restart: unless-stopped

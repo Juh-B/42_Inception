@@ -1,6 +1,6 @@
 
 COMPOSE_FILE    = srcs/docker-compose.yml
-DATA_DIR        = /home/ekeller-/data
+DATA_DIR        = /home/jcosta-b/data
 
 all: create_dirs
 	docker compose -f $(COMPOSE_FILE) up -d --build

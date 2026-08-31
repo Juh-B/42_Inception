@@ -26,7 +26,7 @@ sudo usermod -aG docker "$USER"
 Add the required domain mapping inside the VM:
 
 ```bash
-printf '%s\n' '127.0.0.1 ekeller-.42.fr' | sudo tee -a /etc/hosts
+printf '%s\n' '127.0.0.1 jcosta-b.42.fr' | sudo tee -a /etc/hosts
 ```
 
 ## Setup from a clean clone
@@ -46,10 +46,10 @@ Create `srcs/.env` with the non-sensitive settings expected by the initializatio
 
 ```bash
 cat > srcs/.env <<'EOF'
-DOMAIN_NAME=ekeller-.42.fr
+DOMAIN_NAME=jcosta-b.42.fr
 MYSQL_DATABASE=wordpress_db
 MYSQL_USER=wp_user
-WP_TITLE=Inception ekeller-
+WP_TITLE=Inception jcosta-b
 WP_ADMIN_USER=superuser
 WP_ADMIN_EMAIL=superuser@42.fr
 WP_USER_LOGIN=editor_user
@@ -93,17 +93,17 @@ Never commit these files or copy their values into Markdown files.
 
 The `Makefile` creates the required directories automatically:
 
-- `/home/ekeller-/data/mariadb`
-- `/home/ekeller-/data/wordpress`
+- `/home/jcosta-b/data/mariadb`
+- `/home/jcosta-b/data/wordpress`
 
 The equivalent manual command is:
 
 ```bash
-mkdir -p /home/ekeller-/data/mariadb
-mkdir -p /home/ekeller-/data/wordpress
+mkdir -p /home/jcosta-b/data/mariadb
+mkdir -p /home/jcosta-b/data/wordpress
 ```
 
-If the current VM user cannot create `/home/ekeller-/data`, create it once with appropriate administrative permissions and assign ownership to the user running Docker.
+If the current VM user cannot create `/home/jcosta-b/data`, create it once with appropriate administrative permissions and assign ownership to the user running Docker.
 
 ## Build and launch
 
@@ -134,7 +134,7 @@ On first boot, MariaDB initializes its data directory. WordPress then:
 | `make status` | Display Compose service status | Unchanged |
 | `make logs` | Follow logs for all services | Unchanged |
 | `make down` | Stop and remove project containers/network | Preserved |
-| `make clean` | Run `down -v` and delete `/home/ekeller-/data` | Deleted |
+| `make clean` | Run `down -v` and delete `/home/jcosta-b/data` | Deleted |
 | `make fclean` | Run `clean` and prune unused Docker images/build data | Deleted |
 | `make re` | Destructively reset and rebuild the project | Deleted |
 
@@ -199,8 +199,8 @@ The Compose volumes use the local driver with bind options:
 
 | Data | Logical Compose volume | Host path |
 |---|---|---|
-| MariaDB database | `wordpress_db` | `/home/ekeller-/data/mariadb` |
-| WordPress files | `wordpress_files` | `/home/ekeller-/data/wordpress` |
+| MariaDB database | `wordpress_db` | `/home/jcosta-b/data/mariadb` |
+| WordPress files | `wordpress_files` | `/home/jcosta-b/data/wordpress` |
 
 Inspect them with:
 
@@ -209,7 +209,7 @@ docker volume inspect srcs_wordpress_db
 docker volume inspect srcs_wordpress_files
 ```
 
-The inspection output must contain paths under `/home/ekeller-/data/`.
+The inspection output must contain paths under `/home/jcosta-b/data/`.
 
 Data survives:
 
@@ -257,11 +257,11 @@ inception/
 
 | Problem | Check | Resolution |
 |---|---|---|
-| Domain does not resolve | `getent hosts ekeller-.42.fr` | Add the required `/etc/hosts` entry |
+| Domain does not resolve | `getent hosts jcosta-b.42.fr` | Add the required `/etc/hosts` entry |
 | HTTPS is unreachable | `make status` and `docker logs nginx` | Start the stack or correct the reported NGINX error |
 | WordPress reports a database error | `docker logs wordpress` and `docker logs mariadb` | Verify secrets and wait for MariaDB initialization |
 | Port 443 is already used | `sudo lsof -i :443` | Stop the conflicting host service |
-| Host volume cannot be created | Inspect `/home/ekeller-/data` permissions | Assign the directory to the user running Docker |
+| Host volume cannot be created | Inspect `/home/jcosta-b/data` permissions | Assign the directory to the user running Docker |
 
 ## eval
 ###simple setup
@@ -269,7 +269,7 @@ make status
 docker port nginx
 docker port wordpress
 docker port mariadb
-curl -kIv https://ekeller-.42.fr/
+curl -kIv https://jcosta-b.42.fr/
 
 ###nginx
 docker port nginx
@@ -281,7 +281,7 @@ docker exec wordpress \
   --fields=ID,user_login,user_email,roles \
   --path=/var/www/html \
   --allow-root
-https://ekeller-.42.fr/wp-admin/
+https://jcosta-b.42.fr/wp-admin/
 
 ###mariadb
 docker exec -it mariadb mariadb -u root -p

@@ -16,13 +16,13 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/ekeller-/data/mariadb
+      device: /home/jcosta-b/data/mariadb
   wordpress_files:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: /home/ekeller-/data/wordpress
+      device: /home/jcosta-b/data/wordpress
 
 services:
 

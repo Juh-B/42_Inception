@@ -1,4 +1,4 @@
-*This project has been created as part of the 42 curriculum by ekeller-.*
+*This project has been created as part of the 42 curriculum by jcosta-b.*
 
 # Inception
 
@@ -27,7 +27,7 @@ The project sources are organized by responsibility:
 - `srcs/requirements/wordpress/` contains the WordPress/PHP-FPM Dockerfile, pool configuration, and installation script.
 - `srcs/requirements/mariadb/` contains the MariaDB Dockerfile, database configuration, and initialization script.
 - `secrets/` contains local secret files and must never be committed.
-- `/home/ekeller-/data/` contains persistent data on the Docker host.
+- `/home/jcosta-b/data/` contains persistent data on the Docker host.
 
 Keeping each service in its own directory makes its build context explicit and prevents unrelated configuration from being copied into an image. Runtime orchestration remains centralized in the Compose file.
 
@@ -74,8 +74,8 @@ This project uses the `inception_net` bridge network. MariaDB and WordPress are 
 
 This project declares named Compose volumes but configures the local driver to bind them to the required host directories:
 
-- MariaDB: `/home/ekeller-/data/mariadb`
-- WordPress: `/home/ekeller-/data/wordpress`
+- MariaDB: `/home/jcosta-b/data/mariadb`
+- WordPress: `/home/jcosta-b/data/wordpress`
 
 This preserves Docker volume attachment semantics while making the required host storage paths explicit.
 
@@ -90,7 +90,7 @@ This preserves Docker volume attachment semantics while making the required host
 - The following local host entry:
 
 ```text
-127.0.0.1 ekeller-.42.fr
+127.0.0.1 jcosta-b.42.fr
 ```
 
 ### Configure a clean clone
@@ -103,10 +103,10 @@ Create `srcs/.env` with the non-sensitive configuration:
 mkdir -p secrets
 
 cat > srcs/.env <<'EOF'
-DOMAIN_NAME=ekeller-.42.fr
+DOMAIN_NAME=jcosta-b.42.fr
 MYSQL_DATABASE=wordpress_db
 MYSQL_USER=wp_user
-WP_TITLE=Inception ekeller-
+WP_TITLE=Inception jcosta-b
 WP_ADMIN_USER=superuser
 WP_ADMIN_EMAIL=superuser@42.fr
 WP_USER_LOGIN=editor_user
@@ -148,7 +148,7 @@ make logs
 make down
 ```
 
-Open `https://ekeller-.42.fr` and accept the warning for the self-signed certificate. The administration panel is available at `https://ekeller-.42.fr/wp-admin`.
+Open `https://jcosta-b.42.fr` and accept the warning for the self-signed certificate. The administration panel is available at `https://jcosta-b.42.fr/wp-admin`.
 
 The cleanup targets are destructive:
 

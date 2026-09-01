@@ -8,11 +8,11 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /run/mysqld /var/lib/mysql /var/log/mysql \
     && chown -R mysql:mysql /run/mysqld /var/lib/mysql /var/log/mysql
 
-COPY conf/my.cnf /etc/mysql/mariadb.conf.d/60-inception.cnf
-COPY tools/db_init.sh /usr/local/bin/db_init.sh
-RUN chmod +x /usr/local/bin/db_init.sh
+COPY conf/my.conf /etc/mysql/mariadb.conf.d/60-inception.cnf
+COPY tools/init_db.sh /usr/local/bin/init_db.sh
+RUN chmod +x /usr/local/bin/init_db.sh
 
-EXPOSE 3306
+EXPOSE ${MARIADB_INTERNAL_PORT}
 
-ENTRYPOINT ["/usr/local/bin/db_init.sh"]
+ENTRYPOINT ["/usr/local/bin/init_db.sh"]
 CMD ["mysqld", "--user=mysql"]

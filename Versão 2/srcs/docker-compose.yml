@@ -1,73 +1,94 @@
-secrets:
-  db_password:
-    file: ../secrets/db_password.txt
-  db_root_password:
-    file: ../secrets/db_root_password.txt
-  credentials:
-    file: ../secrets/credentials.txt
+services:
 
-networks:
-  inception_net:
-    driver: bridge
+  mariadb:
+    image: mariadb
+    container_name: mariadb
+    build:
+      context: ./requirements/mariadb
+      dockerfile: Dockerfile
+    env_file: .env
+    secrets:
+      - db_password
+      - db_root_password
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - inception_net
+    restart: unless-stopped
+
+  wordpress:
+    image: wordpress
+    container_name: wordpress
+    build:
+      context: ./requirements/wordpress
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    secrets:
+      - db_password
+      - wp_credentials
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - inception_net
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+
+  nginx:
+    image: nginx
+    container_name: nginx
+    build:
+      context: ./requirements/nginx
+      dockerfile: Dockerfile
+    env_file: .env
+    volumes:
+      - wordpress_data:/var/www/html
+    ports:
+      - "${NGINX_EXTERNAL_PORT}:${NGINX_INTERNAL_PORT}"
+    networks:
+      - inception_net
+    depends_on:
+      - wordpress
+    restart: unless-stopped
+
+
+# ===================== VOLUMES =====================
 
 volumes:
-  wordpress_db:
+
+  mariadb_data:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /home/jcosta-b/data/mariadb
-  wordpress_files:
+
+  wordpress_data:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /home/jcosta-b/data/wordpress
 
-services:
 
-  # ─── Mandatory ──────────────────────────────────────────────────────────────
+# ===================== NETWORK =====================
 
-  nginx:
-    build: ./requirements/nginx
-    container_name: nginx
-    image: nginx
-    depends_on:
-      - wordpress
-    ports:
-      - "443:443"
-    volumes:
-      - wordpress_files:/var/www/html
-    networks:
-      - inception_net
-    restart: unless-stopped
+networks:
 
-  wordpress:
-    build: ./requirements/wordpress
-    container_name: wordpress
-    image: wordpress
-    depends_on:
-      - mariadb
-    env_file: .env
-    secrets:
-      - db_password
-      - credentials
-    volumes:
-      - wordpress_files:/var/www/html
-    networks:
-      - inception_net
-    restart: unless-stopped
+  inception_net:
+    driver: bridge
 
-  mariadb:
-    build: ./requirements/mariadb
-    container_name: mariadb
-    image: mariadb
-    env_file: .env
-    secrets:
-      - db_password
-      - db_root_password
-    volumes:
-      - wordpress_db:/var/lib/mysql
-    networks:
-      - inception_net
-    restart: unless-stopped
+
+# ===================== SECRETS =====================
+
+secrets:
+
+  db_password:
+    file: ../secrets/db_password.txt
+
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+
+  wp_credentials:
+    file: ../secrets/wp_credentials.txt

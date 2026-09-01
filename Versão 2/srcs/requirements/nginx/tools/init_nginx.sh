@@ -1,23 +1,32 @@
-# generate_ssl.sh
-
 #!/bin/bash
+
 set -e
 
-# Garante que o diretório configurado no nginx.conf existe
+# ===================== NGINX CONFIGURATION =====================
+
+echo "Configuring NGINX..."
+
 mkdir -p /etc/ssl/nginx
 
-# Gera o certificado autoassinado se ele ainda não existir. -x509 indica que eh self signed
 if [ ! -f /etc/ssl/nginx/nginx.crt ]; then
     echo "[nginx_init] Generating self-signed SSL certificate..."
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout /etc/ssl/nginx/nginx.key \
         -out /etc/ssl/nginx/nginx.crt \
-        -subj "/C=BR/ST=SP/L=SaoPaulo/O=42/CN=jcosta-b.42.fr"
+        -subj "/C=BR/ST=SP/L=SaoPaulo/O=42/CN=${DOMAIN_NAME}"
 
     chmod 600 /etc/ssl/nginx/nginx.key
     chmod 644 /etc/ssl/nginx/nginx.crt
     echo "[nginx_init] SSL certificate generated successfully."
 fi
 
-# Passa o comando para o CMD (que é o 'nginx -g "daemon off;"')
+
+# ===================== VALIDATION =====================
+
+nginx -t
+
+echo "NGINX configuration is valid."
+echo "Starting NGINX..."
+
+# Command nginx -g "daemon off;"
 exec "$@"

@@ -2,7 +2,7 @@ server {
     listen      443 ssl;
     server_name jcosta-b.42.fr;
 
-    #protocolo de security que garante confidencialidade(encriptado), integridade e autheticacao(nesse caso self signed. cliente verifica que servidor eh quem relamente eh)
+# ===================== SECURITY PROTOCOL =====================
     ssl_protocols       TLSv1.2 TLSv1.3;
     ssl_certificate     /etc/ssl/nginx/nginx.crt;
     ssl_certificate_key /etc/ssl/nginx/nginx.key;

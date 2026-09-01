@@ -1,15 +1,34 @@
-*.txt
+# ===================== SECRETS =====================
 
-data/
+secrets/*.txt
+secrets/*
+!secrets/.gitkeep
 
-.env
+# ===================== OS =====================
 
 .DS_Store
+Thumbs.db
+
+# ===================== EDITORS =====================
+
 .vscode/
+.idea/
+
+# ===================== TEMPORARY =====================
+
+*.swp
+*.swo
+*~
+
+# ===================== LOGS =====================
+
+data/
+*.log
+.agents
+.codex
+
+# ===================== MDs =====================
 
 inception_subject.md
 inception_evaluation.md
 implementation_plan.md
-
-.agents
-.codex

@@ -14,13 +14,13 @@ RUN apt-get update && apt-get install -y \
 COPY conf/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copia o script de inicialização
-COPY tools/generate_ssl.sh /usr/local/bin/generate_ssl.sh
-RUN chmod +x /usr/local/bin/generate_ssl.sh
+COPY tools/init_nginx.sh /usr/local/bin/init_nginx.sh
+RUN chmod +x /usr/local/bin/init_nginx.sh
 
 EXPOSE 443
 
 # O Entrypoint roda o script e assume o comando padrão
-ENTRYPOINT ["/usr/local/bin/generate_ssl.sh"]
+ENTRYPOINT ["/usr/local/bin/init_nginx.sh"]
 
 # Comando padrão que será passado para o final do script
 CMD ["nginx", "-g", "daemon off;"]

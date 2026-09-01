@@ -1,27 +1,37 @@
 #!/bin/bash
-# Opcional: mude para 'set -ex' se ainda quiser ver o rastro de cada linha nos logs
+
 set -e
 
-# ── Carregar as senhas de forma segura via Docker Secrets ────────────────────
+# ===================== READ SECRETS =====================
+
 DB_PASSWORD=$(cat /run/secrets/db_password | tr -d '\n')
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password | tr -d '\n')
 
-# ── Garantir as pastas de execução e permissões corretas do Linux ────────────
+# ===================== EXEC FOLDER =====================
+
+DATA_DIR="/var/lib/mysql"
+
 mkdir -p /run/mysqld /var/log/mysql
-chown -R mysql:mysql /run/mysqld /var/lib/mysql /var/log/mysql
+chown -R mysql:mysql /run/mysqld "${DATA_DIR}" /var/log/mysql
 
-# ── Inicialização Primária do Banco de Dados ─────────────────────────────────
-# Mudamos a checagem para procurar pela pasta do SEU banco de dados
-if [ ! -d "/var/lib/mysql/${MYSQL_DATABASE}" ]; then
-    echo "[db_init] Banco de dados '${MYSQL_DATABASE}' não encontrado. Inicializando..."
 
-    # 1. Cria a estrutura base do sistema de arquivos do MariaDB
-    mysql_install_db --user=mysql --datadir=/var/lib/mysql --skip-test-db
+# ===================== INITIALIZATION =====================
 
-    echo "[db_init] Executando comandos de privilégios, usuários e tabelas via bootstrap..."
+if [ ! -d "${DATA_DIR}/${MYSQL_DATABASE}" ]; then
+    echo "[db_init] Database '${MYSQL_DATABASE}' not found. Initializing MariaDB data directory..."
 
-    # 2. O `--bootstrap` lê os comandos SQL via stdin, processa internamente e fecha de forma síncrona
+    mariadb-install-db \
+        --user=mysql \
+        --datadir="${DATA_DIR}" \
+        --skip-test-db
+        
+    # ===================== BOOTSTRAP =====================
+
+    echo "[db_init] Exec users, commands and table by bootstrap..."
+
     mysqld --user=mysql --bootstrap <<EOF
+
+
 FLUSH PRIVILEGES;
 ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';
 CREATE DATABASE IF NOT EXISTS \`${MYSQL_DATABASE}\`;
@@ -30,9 +40,9 @@ GRANT ALL PRIVILEGES ON \`${MYSQL_DATABASE}\`.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES;
 EOF
 
-    echo "[db_init] Configuração inicial concluída com sucesso."
+    echo "[db_init] Successful Configuration."
 fi
 
 # ── Inicialização de Produção ────────────────────────────────────────────────
-echo "[db_init] Passando controle para o processo principal (mysqld)..."
+echo "[db_init] Main process (mysqld)..."
 exec "$@"

@@ -1,26 +1,19 @@
 FROM debian:bookworm
 
-# instala esses servi;os na imagem
 RUN apt-get update && apt-get install -y \
     nginx \
     openssl \
     && rm -f /etc/nginx/sites-enabled/default \
     && rm -rf /var/lib/apt/lists/*
 
-# Cria o diretório para os certificados SSL
-#RUN mkdir -p /etc/nginx/ssl
 
-# Copia a configuração diretamente para o local correto do NGINX
 COPY conf/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copia o script de inicialização
 COPY tools/init_nginx.sh /usr/local/bin/init_nginx.sh
 RUN chmod +x /usr/local/bin/init_nginx.sh
 
 EXPOSE 443
 
-# O Entrypoint roda o script e assume o comando padrão
 ENTRYPOINT ["/usr/local/bin/init_nginx.sh"]
 
-# Comando padrão que será passado para o final do script
 CMD ["nginx", "-g", "daemon off;"]

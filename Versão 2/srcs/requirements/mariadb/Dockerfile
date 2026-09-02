@@ -4,7 +4,6 @@ RUN apt-get update && apt-get install -y \
     mariadb-server \
     && rm -rf /var/lib/apt/lists/*
 
-# Pre-create runtime AND log directories with correct ownership
 RUN mkdir -p /run/mysqld /var/lib/mysql /var/log/mysql \
     && chown -R mysql:mysql /run/mysqld /var/lib/mysql /var/log/mysql
 

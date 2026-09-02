@@ -6,7 +6,7 @@ WP_DIR="/var/www/html"
 
 DB_PASSWORD=$(cat /run/secrets/db_password | tr -d '\n')
 WP_ADMIN_PASSWORD=$(grep '^ADMIN_PASSWORD=' /run/secrets/wp_credentials | cut -d= -f2 | tr -d '\n')
-WP_USER_PASSWORD=$(grep  '^USER_PASSWORD='  /run/secrets/wp_credentials | cut -d= -f2 | tr -d '\n')
+WP_USER_PASSWORD=$(grep  '^USER_PASSWORD='  /run/secrets/wp_user_credentials | cut -d= -f2 | tr -d '\n')
 
 
 # ===================== WAIT FOR DATABASE =====================

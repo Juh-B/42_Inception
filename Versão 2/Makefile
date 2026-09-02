@@ -48,14 +48,14 @@ logs:
 status:
 	@docker compose -f $(COMPOSE_FILE) ps
 
-# config:
-# 	@docker compose -f $(COMPOSE_FILE) config
+config:
+	@docker compose -f $(COMPOSE_FILE) config
 
-# images:
-# 	@docker compose -f $(COMPOSE_FILE) config --images
+images:
+	@docker compose -f $(COMPOSE_FILE) config --images
 
-# network:
-# 	@docker network ls
+network:
+	@docker network ls
 
 help:
 	@echo "$(YELLOW)Available commands:$(RESET)"
@@ -67,9 +67,9 @@ help:
 	@echo "  make re      Full rebuild"
 	@echo "  make logs    Show logs"
 	@echo "  make status  Show container status"
-# 	@echo "  make config  Validate Compose configuration"
-# 	@echo "  make images  Show image names"
-# 	@echo "  make network Show Docker networks"
+	@echo "  make config  Validate Compose configuration"
+	@echo "  make images  Show image names"
+	@echo "  make network Show Docker networks"
 
 
 .PHONY: all up setup down clean fclean re logs status config images network help

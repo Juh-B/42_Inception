@@ -1,297 +1,305 @@
-# DEV_DOC.md — Developer documentation
+# Developer Documentation
+
+## Introduction
+
+This document explains how to set up, build, run and manage the Inception project.
+
+The infrastructure is built with Docker Compose and contains separate containers for:
+
+* NGINX
+* WordPress + PHP-FPM
+* MariaDB
+
+The services communicate through a dedicated Docker network.
 
 ## Prerequisites
 
-Run the project inside a Linux virtual machine with:
+The project must be run inside a Virtual Machine.
 
-- Docker Engine
-- Docker Compose v2
-- `make`
-- `git`
-- `openssl`
+Required software:
 
-For Debian or Ubuntu, install the locally available Docker and Compose v2 packages. Package names can differ by distribution:
+* Docker
+* Docker Compose
+* Make
+* Git
+
+Check the installed versions with:
 
 ```bash
-sudo apt update
-sudo apt install -y docker.io docker-compose-v2 make git openssl
+docker --version
+docker-compose --version
+make --version
+git --version
 ```
 
-Allow the current user to run Docker, then start a new login session so the group change takes effect:
+## Project Structure
 
-```bash
-sudo usermod -aG docker "$USER"
+```text
+.
+├── Makefile
+├── README.md
+├── USER_DOC.md
+├── DEV_DOC.md
+├── secrets/
+└── srcs/
+    ├── docker-compose.yml
+    ├── .env
+    └── requirements/
+        ├── nginx/
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        ├── wordpress/
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        └── mariadb/
+            ├── Dockerfile
+            ├── conf/
+            └── tools/
+        
 ```
 
-Add the required domain mapping inside the VM:
+All configuration files required by the project are located inside `srcs/`.
 
-```bash
-printf '%s\n' '127.0.0.1 jcosta-b.42.fr' | sudo tee -a /etc/hosts
+## Configuration
+
+### Environment Variables
+
+The main non-sensitive configuration values are stored in:
+
+```text
+srcs/.env
 ```
 
-## Setup from a clean clone
+Example:
 
-### 1. Clone the repository
-
-```bash
-git clone <repository-url> inception
-cd inception
-```
-
-The `.env` and secret files are intentionally not stored in Git. They must be created locally before running Compose.
-
-### 2. Create the environment file
-
-Create `srcs/.env` with the non-sensitive settings expected by the initialization scripts:
-
-```bash
-cat > srcs/.env <<'EOF'
+```env
 DOMAIN_NAME=jcosta-b.42.fr
-MYSQL_DATABASE=wordpress_db
-MYSQL_USER=wp_user
-WP_TITLE=Inception jcosta-b
-WP_ADMIN_USER=superuser
-WP_ADMIN_EMAIL=superuser@42.fr
-WP_USER_LOGIN=editor_user
-WP_USER_EMAIL=editor@42.fr
-EOF
+MYSQL_DATABASE=wordpress
+MYSQL_USER=wordpress
 ```
 
-The administrator login is `superuser`, which complies with the prohibition on administrator usernames containing `admin`.
+Passwords must not be stored in Dockerfiles or committed to Git.
 
-### 3. Create local secrets
+### Secrets
 
-Create the ignored directory and generate unique passwords:
+Sensitive information is stored locally in the `secrets/` directory or through the Docker secrets configuration used by the project.
 
-```bash
-mkdir -p secrets
+Example files may include:
 
-openssl rand -base64 24 > secrets/db_password.txt
-openssl rand -base64 24 > secrets/db_root_password.txt
-
-{
-  printf 'ADMIN_PASSWORD='
-  openssl rand -base64 24
-  printf 'USER_PASSWORD='
-  openssl rand -base64 24
-} > secrets/credentials.txt
-
-chmod 600 secrets/*.txt
+```text
+secrets/
+├── credentials.txt
+├── db_password.txt
+└── db_root_password.txt
 ```
 
-The expected files are:
+These files must be ignored by Git.
 
-| File | Used by |
-|---|---|
-| `secrets/db_password.txt` | MariaDB and WordPress |
-| `secrets/db_root_password.txt` | MariaDB |
-| `secrets/credentials.txt` | WordPress |
+## Domain Configuration
 
-Never commit these files or copy their values into Markdown files.
+The project domain must point to the Virtual Machine IP.
 
-### 4. Prepare host storage
+Add the following entry to the VM's `/etc/hosts`:
 
-The `Makefile` creates the required directories automatically:
-
-- `/home/jcosta-b/data/mariadb`
-- `/home/jcosta-b/data/wordpress`
-
-The equivalent manual command is:
-
-```bash
-mkdir -p /home/jcosta-b/data/mariadb
-mkdir -p /home/jcosta-b/data/wordpress
+```text
+<VM_IP> jcosta-b.42.fr
 ```
 
-If the current VM user cannot create `/home/jcosta-b/data`, create it once with appropriate administrative permissions and assign ownership to the user running Docker.
+This allows the browser to resolve the project domain locally.
 
-## Build and launch
+## Building and Starting
+
+From the root of the repository:
 
 ```bash
 make
 ```
 
-This creates the host directories and runs:
+The Makefile is responsible for preparing the required directories and starting Docker Compose with the project configuration.
 
-```bash
-docker compose -f srcs/docker-compose.yml up -d --build
+The Docker Compose file is:
+
+```text
+srcs/docker-compose.yml
 ```
 
-On first boot, MariaDB initializes its data directory. WordPress then:
-
-1. Waits until MariaDB responds.
-2. Downloads WordPress core.
-3. Creates `wp-config.php`.
-4. Installs the site with the configured administrator.
-5. Creates the second WordPress user.
-6. Starts PHP-FPM in the foreground.
-
-## Makefile usage
-
-| Command | Effect | Persistent data |
-|---|---|---|
-| `make` or `make all` | Build and start the complete stack | Preserved |
-| `make status` | Display Compose service status | Unchanged |
-| `make logs` | Follow logs for all services | Unchanged |
-| `make down` | Stop and remove project containers/network | Preserved |
-| `make clean` | Run `down -v` and delete `/home/jcosta-b/data` | Deleted |
-| `make fclean` | Run `clean` and prune unused Docker images/build data | Deleted |
-| `make re` | Destructively reset and rebuild the project | Deleted |
-
-Use `make down` for a normal stop. The other cleanup targets must only be used when a complete data reset is intended.
-
-## Docker Compose commands
+To build and start the services directly:
 
 ```bash
-# Validate and render the resolved configuration
-docker compose -f srcs/docker-compose.yml config
-
-# Build images
-docker compose -f srcs/docker-compose.yml build
-
-# Start containers
-docker compose -f srcs/docker-compose.yml up -d
-
-# Display service state
-docker compose -f srcs/docker-compose.yml ps
-
-# Follow logs
-docker compose -f srcs/docker-compose.yml logs -f
-
-# Stop while preserving persistent data
-docker compose -f srcs/docker-compose.yml down
+docker-compose -f srcs/docker-compose.yml up --build -d
 ```
 
-Do not add `-v` to `docker compose down` when the data must be preserved.
+## Stopping
 
-## Container and network management
+Stop the services with:
 
 ```bash
-# Inspect individual logs
+make down
+```
+
+or:
+
+```bash
+docker-compose -f srcs/docker-compose.yml down
+```
+
+## Container Management
+
+List running containers:
+
+```bash
+docker ps
+```
+
+List all containers:
+
+```bash
+docker ps -a
+```
+
+View logs:
+
+```bash
 docker logs nginx
 docker logs wordpress
 docker logs mariadb
+```
 
-# Open a shell
-docker exec -it wordpress bash
-docker exec -it mariadb bash
+Follow logs:
 
-# Run WP-CLI
-docker exec wordpress wp plugin list \
-  --path=/var/www/html \
-  --allow-root
+```bash
+docker logs -f nginx
+```
 
-# Connect to MariaDB; enter the local root secret when prompted
-docker exec -it mariadb mariadb -u root -p
+Open a shell inside a running container when necessary for debugging:
 
-# Inspect the Compose bridge network
-docker network inspect srcs_inception_net
+```bash
+docker exec -it nginx sh
+```
 
-# List project volumes
+The exact shell command may depend on the base distribution used by the container.
+
+## Docker Images
+
+List project images:
+
+```bash
+docker images
+```
+
+Each image follows the name of its corresponding service.
+
+The project does not use ready-made application images from DockerHub. The application images are built locally using the project's Dockerfiles.
+
+The Dockerfiles use Alpine or Debian as their base distribution, according to the project requirements.
+
+## Docker Network
+
+The services communicate through a dedicated Docker network defined in:
+
+```text
+srcs/docker-compose.yml
+```
+
+List Docker networks:
+
+```bash
+docker network ls
+```
+
+Inspect the project network:
+
+```bash
+docker network inspect <network_name>
+```
+
+The containers use the Docker network to communicate with each other without using host networking or deprecated container links.
+
+## Persistent Data
+
+The project uses two persistent storage locations:
+
+```text
+/home/jcosta-b/data/mariadb
+/home/jcosta-b/data/wordpress
+```
+
+MariaDB data is stored in the first location.
+
+WordPress website files are stored in the second location.
+
+This data remains available when containers are stopped or recreated.
+
+## Volumes
+
+List Docker volumes:
+
+```bash
 docker volume ls
 ```
 
-Compose-generated resource names include the project-name prefix by default. With this repository layout, examples include `srcs_inception_net`, `srcs_wordpress_db`, and `srcs_wordpress_files`.
-
-## Data persistence
-
-The Compose volumes use the local driver with bind options:
-
-| Data | Logical Compose volume | Host path |
-|---|---|---|
-| MariaDB database | `wordpress_db` | `/home/jcosta-b/data/mariadb` |
-| WordPress files | `wordpress_files` | `/home/jcosta-b/data/wordpress` |
-
-Inspect them with:
+Inspect a volume:
 
 ```bash
-docker volume inspect srcs_wordpress_db
-docker volume inspect srcs_wordpress_files
+docker volume inspect <volume_name>
 ```
 
-The inspection output must contain paths under `/home/jcosta-b/data/`.
+Persistent data should not be removed during normal container shutdown.
 
-Data survives:
+## Restart Policy
 
-- `make down`
-- Container recreation
-- Docker restart
-- VM reboot
+The Docker Compose configuration uses a restart policy so that containers can restart automatically after an unexpected failure.
 
-Data does not survive `make clean`, `make fclean`, or `make re`.
+The restart configuration can be checked with:
 
-To test persistence correctly, edit a WordPress page, run `make down`, reboot the VM, run `make`, and confirm that the edit remains.
-
-## Project structure
-
-```text
-inception/
-├── Makefile
-├── README.md
-├── USER_DOC.md
-├── DEV_DOC.md
-├── .gitignore
-├── secrets/                         # Local ignored *.txt secret files
-│   ├── db_password.txt
-│   ├── db_root_password.txt
-│   └── credentials.txt
-└── srcs/
-    ├── .env                         # Local non-sensitive configuration
-    ├── docker-compose.yml
-    └── requirements/
-        ├── nginx/
-        │   ├── Dockerfile
-        │   ├── conf/nginx.conf
-        │   └── tools/generate_ssl.sh
-        ├── wordpress/
-        │   ├── Dockerfile
-        │   ├── conf/www.conf
-        │   └── tools/wp_setup.sh
-        └── mariadb/
-            ├── Dockerfile
-            ├── conf/my.cnf
-            └── tools/db_init.sh
+```bash
+docker inspect <container_name>
 ```
 
-## Troubleshooting
+## Rebuilding the Project
 
-| Problem | Check | Resolution |
-|---|---|---|
-| Domain does not resolve | `getent hosts jcosta-b.42.fr` | Add the required `/etc/hosts` entry |
-| HTTPS is unreachable | `make status` and `docker logs nginx` | Start the stack or correct the reported NGINX error |
-| WordPress reports a database error | `docker logs wordpress` and `docker logs mariadb` | Verify secrets and wait for MariaDB initialization |
-| Port 443 is already used | `sudo lsof -i :443` | Stop the conflicting host service |
-| Host volume cannot be created | Inspect `/home/jcosta-b/data` permissions | Assign the directory to the user running Docker |
+After changing a Dockerfile or configuration, rebuild the images:
 
-## eval
-###simple setup
-make status
-docker port nginx
-docker port wordpress
-docker port mariadb
-curl -kIv https://jcosta-b.42.fr/
+```bash
+docker-compose -f srcs/docker-compose.yml up --build -d
+```
 
-###nginx
-docker port nginx
+To stop and remove the containers and network:
 
-###wordpres
-check users
-docker exec wordpress \
-  wp user list \
-  --fields=ID,user_login,user_email,roles \
-  --path=/var/www/html \
-  --allow-root
-https://jcosta-b.42.fr/wp-admin/
+```bash
+docker-compose -f srcs/docker-compose.yml down
+```
 
-###mariadb
-docker exec -it mariadb mariadb -u root -p
-SHOW DATABASES;
-USE wordpress_db;
-SHOW TABLES;
-SELECT COUNT(*) AS post_count FROM wp_posts;
-SELECT COUNT(*) AS user_count FROM wp_users;
-docker exec -it wordpress \
-  mariadb -h mariadb -u wp_user -p wordpress_db
-SELECT DATABASE();
-SHOW TABLES;
-SELECT ID, post_title, post_status FROM wp_posts;
+Persistent data should remain in the host data directories unless it is explicitly removed.
+
+## Cleaning
+
+Be careful when removing volumes because they contain persistent application data.
+
+To inspect resources before removing anything:
+
+```bash
+docker ps -a
+docker images
+docker volume ls
+docker network ls
+```
+
+## Security
+
+The following rules must always be respected:
+
+* Never commit passwords to Git.
+* Never put passwords directly inside Dockerfiles.
+* Keep secret files outside version control.
+* Do not use the `latest` tag.
+* NGINX must be the only public entry point.
+* Only port `443` should be exposed for the infrastructure.
+* TLSv1.2 or TLSv1.3 must be used.
+* Services must run in separate containers.
+* Containers must communicate through the Docker network.
+* Do not use `network: host`.
+* Do not use `links`.
+* Do not use infinite loops such as `tail -f`, `sleep infinity` or `while true` to keep containers alive.

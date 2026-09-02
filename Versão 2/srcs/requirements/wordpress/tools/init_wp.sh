@@ -80,7 +80,7 @@ if [ ! -f "${WP_DIR}/wp-config.php" ]; then
         --path="${WP_DIR}" \
         "${WP_USER}" \
         "${WP_USER_EMAIL}" \
-        --role=editor \
+        --role=contributor\
         --user_pass="${WP_USER_PASSWORD}" \
         --allow-root
 

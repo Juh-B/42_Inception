@@ -65,9 +65,9 @@ create_secret \
     "wp_credentials.txt" \
     "WordPress password"
 
-# create_secret \
-#     "wordpress_user_password.txt" \
-#     "WordPress secondary user password"
+create_secret \
+    "wp_user_credentials.txt" \
+    "WordPress user password"
 
 
 # ===================== DATA DIRECTORIES =====================

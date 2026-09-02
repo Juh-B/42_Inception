@@ -1,125 +1,173 @@
-# USER_DOC.md — User documentation
+# User Documentation
 
-## Services provided
+## Introduction
 
-| Service | URL | Purpose |
-|---|---|---|
-| WordPress website | `https://jcosta-b.42.fr` | Public website |
-| WordPress administration | `https://jcosta-b.42.fr/wp-admin` | Dashboard for managing the site |
+This document explains how to use the Inception infrastructure.
 
-NGINX is the only public entry point. MariaDB and PHP-FPM are available only to other containers on the private Docker network.
+The project provides a WordPress website running through three Docker services:
 
-Because the TLS certificate is self-signed, a browser warning is expected during local use.
+* **NGINX** — receives HTTPS requests.
+* **WordPress + PHP-FPM** — runs the WordPress application.
+* **MariaDB** — stores the WordPress database.
 
-## Starting and stopping the project
+NGINX is the only service accessible from outside the Docker network.
 
-Run these commands from the repository root:
+## Starting the Project
+
+From the project root, run:
 
 ```bash
-# Build images when necessary and start all services
 make
+```
 
-# Check container status
-make status
+This builds the required Docker images and starts the services.
 
-# Follow logs from all services
-make logs
+To check that the containers are running:
 
-# Stop the containers without deleting WordPress or database data
+```bash
+docker ps
+```
+
+The expected services are:
+
+```text
+nginx
+wordpress
+mariadb
+```
+
+## Stopping the Project
+
+To stop the containers:
+
+```bash
 make down
 ```
 
-The initial WordPress installation can take a short time while MariaDB starts and WordPress is downloaded and configured.
+Stopping the containers does not remove the persistent project data.
 
-## Accessing the website
+## Accessing the Website
 
-Ensure that the machine opening the website resolves the project domain to the Docker host. For local access from the VM, `/etc/hosts` should contain:
+Open the following address in a web browser:
 
 ```text
-127.0.0.1 jcosta-b.42.fr
+https://jcosta-b.42.fr
 ```
 
-Then open:
+The website is accessed through HTTPS using port `443`.
 
-- Website: `https://jcosta-b.42.fr`
-- Administration panel: `https:/jcosta-b.42.fr/wp-admin`
+HTTP access through other ports is not part of the infrastructure.
 
-The configured WordPress users are:
+## WordPress Administration Panel
 
-| Role | Login | Password location |
-|---|---|---|
-| Administrator | `superuser` | `ADMIN_PASSWORD` in `secrets/credentials.txt` |
-| Author | `editor_user` | `USER_PASSWORD` in `secrets/credentials.txt` |
+The WordPress administration panel can be accessed at:
 
-Neither password should be copied into Git, documentation, screenshots, or evaluation notes.
+```text
+https://jcosta-b.42.fr/wp-admin
+```
+
+Use the WordPress administrator credentials created during the project setup.
+
+The administrator username does not use `admin`, `administrator`, or similar names, as required by the subject.
 
 ## Credentials
 
-Local credentials are stored in ignored files at the repository root:
+Sensitive credentials are stored locally and are not committed to the Git repository.
 
-| File | Contents |
-|---|---|
-| `secrets/db_password.txt` | Password for the MariaDB `wp_user` account |
-| `secrets/db_root_password.txt` | Password for the MariaDB `root` account |
-| `secrets/credentials.txt` | WordPress administrator and author passwords |
+Depending on the project configuration, credentials can be found in:
 
-Restrict access to these files:
-
-```bash
-chmod 600 secrets/*.txt
+```text
+secrets/
 ```
 
-These secrets are used during the first database and WordPress initialization. Editing a secret file later does not automatically change an account that already exists.
+or in the local secret configuration used by Docker.
 
-For an existing installation:
+Do not publish password files or other confidential information to Git.
 
-- Change WordPress passwords from the WordPress profile/account screens, or with an appropriate WP-CLI command.
-- A MariaDB password change must be applied to the database account and then synchronized with the matching secret. If the `wp_user` password changes, the WordPress database configuration must also be updated.
-- Back up the data before changing database credentials.
+## Checking the Services
 
-Do not use `make clean` merely to change a password: it deletes the existing WordPress and MariaDB data.
-
-## Basic checks
+### Check running containers
 
 ```bash
-# Containers should be running
-make status
+docker ps
+```
 
-# Review service logs
+### Check all containers
+
+```bash
+docker ps -a
+```
+
+### Check service logs
+
+For example:
+
+```bash
 docker logs nginx
 docker logs wordpress
 docker logs mariadb
-
-# The HTTPS endpoint should respond
-curl -kI https://jcosta-b.42.fr
-
-# HTTP must not be available
-curl -I --max-time 5 http://jcosta-b.42.fr
-
-# MariaDB should respond; enter the root password when prompted
-docker exec -it mariadb mariadb-admin ping -u root -p
-
-# List the configured WordPress users
-docker exec wordpress wp user list \
-  --path=/var/www/html \
-  --allow-root
 ```
 
-If a service is not running, inspect its logs before restarting the stack.
-
-## Persistence and cleanup
-
-WordPress files and MariaDB data survive `make down`, container recreation, and a VM reboot because they are stored under `/home/jcosta-b/data` on the host.
+### Check the Docker network
 
 ```bash
-# Safe stop: persistent data remains
-make down
-
-# Destructive reset: deletes project containers, volumes, and host data
-make clean
-
-# Destructive reset plus pruning unused Docker images/build data
-make fclean
+docker network ls
 ```
 
-After `make clean` or `make fclean`, the next `make` creates a new WordPress installation. Back up any required content first.
+The project network should be present and connected to the project containers.
+
+### Check persistent data
+
+The project data is stored on the host under:
+
+```text
+/home/jcosta-b/data/
+```
+
+The directories contain persistent WordPress and MariaDB data.
+
+## Restart Behavior
+
+The containers are configured to restart automatically when they stop unexpectedly, according to the Docker Compose configuration.
+
+## Troubleshooting
+
+If the website is not accessible:
+
+1. Check that the containers are running:
+
+```bash
+docker ps
+```
+
+2. Check the NGINX logs:
+
+```bash
+docker logs nginx
+```
+
+3. Check the WordPress logs:
+
+```bash
+docker logs wordpress
+```
+
+4. Check the MariaDB logs:
+
+```bash
+docker logs mariadb
+```
+
+5. Check that the domain points to the Virtual Machine IP:
+
+```text
+jcosta-b.42.fr
+```
+
+6. Check that the website is being accessed using:
+
+```text
+https://jcosta-b.42.fr
+```
+
+and not HTTP.

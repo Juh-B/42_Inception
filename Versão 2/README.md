@@ -4,183 +4,194 @@
 
 ## Description
 
-Inception is a system-administration project that builds a small web infrastructure with Docker and Docker Compose. Each service runs in a dedicated container built from a `debian:bookworm` base image; no ready-made service images are used.
+Inception is a system administration project from the 42 curriculum. The goal is to build a small web infrastructure using Docker and Docker Compose inside a Virtual Machine.
 
-The stack provides:
+The mandatory infrastructure is composed of three services:
 
-- NGINX as the only external entry point, serving HTTPS on port 443 with TLSv1.2 or TLSv1.3.
-- WordPress with PHP-FPM, without NGINX.
-- MariaDB, without NGINX.
-- Persistent storage for the WordPress files and MariaDB database.
-- A private bridge network for communication between the containers.
+* **NGINX** — web server and the only entry point to the infrastructure. It uses TLSv1.2/TLSv1.3 and exposes port `443`.
+* **WordPress + PHP-FPM** — provides the WordPress website and processes PHP requests.
+* **MariaDB** — stores the WordPress database.
 
-Dockerfiles define how the individual service images are built. Docker Compose describes how those images are built and run together, including their network, volumes, secrets, dependencies, and restart policies. The root `Makefile` provides short commands for the main Compose operations.
+The services run in separate Docker containers and communicate through a dedicated Docker network.
 
-The image produced by a Dockerfile is the same kind of image whether it is started manually or through Compose. Without Compose, each `docker build`, `docker run`, network, volume, secret, port, and restart option must be managed separately. Compose records those relationships in one declarative file and starts the complete multi-container application consistently.
+The project also uses two persistent volumes:
 
-### Included sources
+* One for the MariaDB database.
+* One for the WordPress website files.
 
-The project sources are organized by responsibility:
+The domain used by the project is:
 
-- `srcs/docker-compose.yml` defines the complete stack.
-- `srcs/requirements/nginx/` contains the NGINX Dockerfile, TLS setup script, and server configuration.
-- `srcs/requirements/wordpress/` contains the WordPress/PHP-FPM Dockerfile, pool configuration, and installation script.
-- `srcs/requirements/mariadb/` contains the MariaDB Dockerfile, database configuration, and initialization script.
-- `secrets/` contains local secret files and must never be committed.
-- `/home/jcosta-b/data/` contains persistent data on the Docker host.
+`jcosta-b.42.fr`
 
-Keeping each service in its own directory makes its build context explicit and prevents unrelated configuration from being copied into an image. Runtime orchestration remains centralized in the Compose file.
+The infrastructure is built from custom Dockerfiles based on the penultimate stable version of Debian or Alpine. Ready-made application images are not used.
 
-## Main design choices
+## Project Structure
 
-### Virtual machines vs Docker
+```text
+.
+├── Makefile
+├── README.md
+├── USER_DOC.md
+├── DEV_DOC.md
+├── secrets/
+└── srcs/
+    ├── docker-compose.yml
+    ├── .env
+    └── requirements/
+        ├── nginx/
+        ├── wordpress/
+        └── mariadb/
+```
 
-| | Virtual machine | Docker container |
-|---|---|---|
-| Isolation | Runs a complete guest OS and kernel | Isolates processes while sharing the host kernel |
-| Startup | Usually slower | Usually faster |
-| Overhead | Higher CPU, memory, and disk overhead | Lower overhead |
-| Typical use | Full OS isolation or different kernels | Reproducible, lightweight services |
+## Main Design Choices
 
-The project itself must run inside a virtual machine, while Docker separates the services inside that VM.
+### Docker
 
-### Secrets vs environment variables
+Docker is used to isolate each service into its own container. Each container has a specific responsibility and communicates with the others through a Docker network.
 
-| | Docker secret | Environment variable |
-|---|---|---|
-| Delivery | Mounted as a file under `/run/secrets/` | Added to the process environment |
-| Visibility | Read only by services that receive the secret | Can appear in container inspection output |
-| Appropriate data | Passwords and other confidential values | Domain names, usernames, database names, and other non-sensitive settings |
+NGINX is the only service exposed to the host through port `443`.
 
-Passwords are kept in ignored files under `secrets/`. Non-sensitive configuration is stored locally in `srcs/.env`.
+### Virtual Machines vs Docker
 
-### Docker bridge network vs host network
+A Virtual Machine emulates an entire operating system and generally requires more resources because it includes its own kernel and operating system environment.
 
-| | Docker bridge network | Host network |
-|---|---|---|
-| Isolation | Uses a private container network | Shares the host network namespace |
-| Service discovery | Containers resolve Compose service names | Services must use host addresses and ports |
-| Exposure | Only explicitly published ports are reachable externally | Container listeners are directly attached to the host |
+Docker containers share the host kernel and isolate applications and their dependencies. They are lighter and faster to start, making Docker a good choice for this infrastructure.
 
-This project uses the `inception_net` bridge network. MariaDB and WordPress are not published to the host; only NGINX publishes port 443.
+### Secrets vs Environment Variables
 
-### Docker volumes vs bind mounts
+Environment variables are useful for configuration values such as the domain name and usernames.
 
-| | Docker-managed volume | Bind mount |
-|---|---|---|
-| Host location | Selected and managed by Docker | Explicitly selected in the configuration |
-| Lifecycle | Managed with Docker volume commands | Managed as normal host files and directories |
-| Portability | Does not depend on a fixed host path | Depends on the configured host path |
+Secrets are more appropriate for confidential information such as passwords because they avoid storing sensitive values directly in Dockerfiles or the Git repository.
 
-This project declares named Compose volumes but configures the local driver to bind them to the required host directories:
+This project uses a `.env` file for configuration and Docker secrets/local secret files for sensitive credentials. Secret files are excluded from Git.
 
-- MariaDB: `/home/jcosta-b/data/mariadb`
-- WordPress: `/home/jcosta-b/data/wordpress`
+### Docker Network vs Host Network
 
-This preserves Docker volume attachment semantics while making the required host storage paths explicit.
+A Docker network provides isolated communication between containers. Services can communicate using their container/service names without exposing every service to the host.
+
+The host network would make containers use the host's network directly and would reduce this isolation.
+
+For this project, a dedicated Docker network is used.
+
+### Docker Volumes vs Bind Mounts
+
+Docker volumes are managed by Docker and are useful for persistent application data.
+
+Bind mounts connect a container directory directly to a directory on the host.
+
+This project uses persistent storage under:
+
+```text
+/home/jcosta-b/data/
+```
+
+This allows the database and WordPress files to survive container recreation.
 
 ## Instructions
 
 ### Prerequisites
 
-- A Linux virtual machine.
-- Docker Engine and Docker Compose v2.
-- `make` and `openssl`.
-- Permission to use Docker without `sudo`, or an equivalent local setup.
-- The following local host entry:
+The project must be run inside a Virtual Machine with:
+
+* Docker
+* Docker Compose
+* Make
+* Git
+
+### Configuration
+
+Before starting the project, configure the `.env` file:
 
 ```text
-127.0.0.1 jcosta-b.42.fr
+srcs/.env
 ```
 
-### Configure a clean clone
+Example:
 
-The real `.env` and secret files are intentionally ignored by Git. Create them locally before the first build.
-
-Create `srcs/.env` with the non-sensitive configuration:
-
-```bash
-mkdir -p secrets
-
-cat > srcs/.env <<'EOF'
+```env
 DOMAIN_NAME=jcosta-b.42.fr
-MYSQL_DATABASE=wordpress_db
-MYSQL_USER=wp_user
-WP_TITLE=Inception jcosta-b
-WP_ADMIN_USER=superuser
-WP_ADMIN_EMAIL=superuser@42.fr
-WP_USER_LOGIN=editor_user
-WP_USER_EMAIL=editor@42.fr
-EOF
+MYSQL_DATABASE=wordpress
+MYSQL_USER=wordpress
 ```
 
-Generate local passwords:
+Passwords and other confidential information must not be placed in the Git repository.
 
-```bash
-openssl rand -base64 24 > secrets/db_password.txt
-openssl rand -base64 24 > secrets/db_root_password.txt
+The local `/etc/hosts` file must point the domain to the Virtual Machine IP:
 
-{
-  printf 'ADMIN_PASSWORD='
-  openssl rand -base64 24
-  printf 'USER_PASSWORD='
-  openssl rand -base64 24
-} > secrets/credentials.txt
-
-chmod 600 secrets/*.txt
+```text
+<VM_IP> jcosta-b.42.fr
 ```
 
-Do not commit these files or paste their values into documentation.
+### Start the project
 
-### Build and run
+From the project root:
 
 ```bash
-# Build the three images and start the stack
 make
+```
 
-# Display container status
-make status
+or:
 
-# Follow service logs
-make logs
+```bash
+make setup
+make up
+```
 
-# Stop containers while preserving data
+The Makefile builds the Docker images and starts the infrastructure using Docker Compose.
+
+### Stop the project
+
+```bash
 make down
 ```
 
-Open `https://jcosta-b.42.fr` and accept the warning for the self-signed certificate. The administration panel is available at `https://jcosta-b.42.fr/wp-admin`.
+### Clean the project
 
-The cleanup targets are destructive:
+The available Makefile targets can be used to stop, rebuild or clean the infrastructure.
 
-```bash
-# Remove project containers, Compose volumes, and persistent host data
-make clean
+Check the Makefile for the exact commands available in the project.
 
-# Perform make clean and prune unused Docker images/build data
-make fclean
+### Access the website
+
+Open:
+
+```text
+https://jcosta-b.42.fr
 ```
 
-Use `make down`, not `make clean` or `make fclean`, when data must be preserved.
+The infrastructure is accessible only through HTTPS on port `443`.
 
-For end-user operations, see `USER_DOC.md`. For development, configuration, persistence, and defense checks, see `DEV_DOC.md`.
+The WordPress administration panel is available at:
+
+```text
+https://jcosta-b.42.fr/wp-admin
+```
 
 ## Resources
 
-### Documentation
+The following resources were used to study and implement the project:
 
-- [Docker documentation](https://docs.docker.com/)
-- [Docker Compose reference](https://docs.docker.com/compose/compose-file/)
-- [NGINX documentation](https://nginx.org/en/docs/)
-- [WordPress CLI documentation](https://wp-cli.org/)
-- [MariaDB documentation](https://mariadb.com/kb/en/)
+* Docker documentation
+* Docker Compose documentation
+* NGINX documentation
+* WordPress documentation
+* PHP-FPM documentation
+* MariaDB documentation
+* OpenSSL documentation
+* 42 Inception subject
 
-### AI usage
+### AI Usage
 
-AI tools (Antigravity / Claude and OpenAI Codex) were used for:
+AI tools were used as a learning and development assistant during the project.
 
-- Generating the initial project structure and Dockerfile boilerplate.
-- Drafting NGINX, PHP-FPM, and MariaDB configuration.
-- Structuring the MariaDB and WordPress initialization scripts.
-- Drafting and reviewing `README.md`, `USER_DOC.md`, and `DEV_DOC.md`.
+They were used mainly for:
 
-All generated material was reviewed and adjusted by the project author, who remains responsible for the submitted work.
+* Understanding Docker and Docker Compose concepts.
+* Understanding containers, networks, volumes and environment variables.
+* Studying NGINX, PHP-FPM and MariaDB configuration.
+* Troubleshooting configuration and runtime errors.
+* Reviewing Dockerfiles, shell scripts and Docker Compose configuration.
+* Understanding project requirements and evaluation criteria.
+* Improving and reviewing the project documentation.
+
+The final configuration, commands and implementation were reviewed and tested as part of the project development.

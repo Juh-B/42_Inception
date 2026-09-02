@@ -90,7 +90,8 @@ Example files may include:
 
 ```text
 secrets/
-├── credentials.txt
+├── wp_credentials.txt
+├── wp_user_credentials.txt
 ├── db_password.txt
 └── db_root_password.txt
 ```

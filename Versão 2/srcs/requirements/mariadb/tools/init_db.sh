@@ -43,6 +43,5 @@ EOF
     echo "[db_init] Successful Configuration."
 fi
 
-# ── Inicialização de Produção ────────────────────────────────────────────────
 echo "[db_init] Main process (mysqld)..."
 exec "$@"

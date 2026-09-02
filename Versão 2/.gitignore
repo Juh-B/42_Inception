@@ -32,3 +32,6 @@ data/
 inception_subject.md
 inception_evaluation.md
 implementation_plan.md
+
+# ===================== env ====================
+.env

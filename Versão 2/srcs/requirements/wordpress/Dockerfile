@@ -22,6 +22,7 @@ RUN curl -fsSL https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-
     -o /usr/local/bin/wp \
     && chmod +x /usr/local/bin/wp
 
+
 # ===================== WORDPRESS DIRECTORY =====================
 
 RUN mkdir -p /var/www/html && chown -R www-data:www-data /var/www/html

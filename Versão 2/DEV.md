@@ -194,7 +194,7 @@ Each image follows the name of its corresponding service.
 
 The project does not use ready-made application images from DockerHub. The application images are built locally using the project's Dockerfiles.
 
-The Dockerfiles use Alpine or Debian as their base distribution, according to the project requirements.
+The Dockerfiles use Debian as their base distribution, according to the project requirements.
 
 ## Docker Network
 

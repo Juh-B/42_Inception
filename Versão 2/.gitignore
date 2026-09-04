@@ -35,3 +35,4 @@ implementation_plan.md
 
 # ===================== env ====================
 .env
+srcs/.env
